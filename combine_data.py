@@ -8,7 +8,11 @@ with open("usersha1-artmbid-artname-plays.tsv", "r") as playcounts:
 			for line in userinfo:
 				line = line.split()
 				cache = [];
+				if line[1] not in ['m', 'f']:
+					line.insert(1, 'x')
 				cache.append(line[1]) # gender
+				if not line[2].isdigit():
+					line.insert(2, '21') # Roll with a default
 				cache.append(line[2]) # age
 				country = '"'+line[3];
 				i = 4
