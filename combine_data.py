@@ -17,7 +17,7 @@ with open("usersha1-artmbid-artname-plays.tsv", "r") as playcounts:
 				country = '"'+line[3];
 				i = 4
 				while (i < len(line) and line[i] not in months):
-					country += " " + line[i];
+					country += line[i];
 					i += 1
 				cache.append(country + '"')
 				cache.append('"' + "".join(line[i:]) + '"') # Date
@@ -26,9 +26,9 @@ with open("usersha1-artmbid-artname-plays.tsv", "r") as playcounts:
 				print pcline
 				while (pcline[0] == line[0]): # uid matches
 					print pcline
-					meshed = []
-					for thing in pcline[1:]:
-						meshed.append(thing)
+					meshed = [pcline[1]]
+					meshed.append("_".join(pcline[2:len(pcline)-1]))
+					meshed.append(pcline[len(pcline)-1])
 					output.write(cache +  " ".join(meshed) + '\n')
 
 					pcline = playcounts.readline().split()

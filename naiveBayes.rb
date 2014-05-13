@@ -26,7 +26,7 @@ class Classifier
         (1...11).each { |i|
 			if (i != number)
 			category = 0
-			bucket = files + "-" + i.to_s.rjust(2, "0")
+			bucket = files + "-" + i.to_s#.rjust(2, "0")
             lines = IO.readlines(bucket)
             lines.each { |line|
                 fields = line.strip.split(/\s/) 
@@ -155,7 +155,7 @@ class Classifier
         #Evaluate the classifier with data from the file
         # bucketPrefix-bucketNumber"""
         
-		bucket = file + "-" + num.to_s.rjust(2, "0")
+		bucket = file + "-" + num.to_s#.rjust(2, "0")
         lines = IO.readlines(bucket)
         totals = {}
         loc = 1
@@ -195,6 +195,7 @@ class Classifier
             prob = prior
             col = 1
 			itemVector.each{ |attrValue|
+				if (! @conditional[category].member?(col)) then next end
                 if (!  @conditional[category][col].member?(attrValue))
                     # we did not find any instances of this attribute value
                     # occurring with this category so prob = 0
