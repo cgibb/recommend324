@@ -14,6 +14,8 @@ class Classifier
         total = 0
         classes = {}
         counts = {}
+		totals = {}
+		numericValues = {}
         
         # reading the data in from the file
         
@@ -30,9 +32,10 @@ class Classifier
                 fields = line.strip.split(/\s/) 
                 ignore = []
                 vector = []
+				nums = []
 				Range.new(1, fields.length).each { |i|
                     if @format[i] == 'num'
-                        vector.push(float(fields[i]))
+                        nums.push(fields[i].to_f)
                     elsif @format[i] == 'attr'
                         vector.push(fields[i])                           
                     elsif @format[i] == 'comment'
@@ -49,6 +52,12 @@ class Classifier
 				if (! counts.member?(category))
 					counts[category] = {};
 				end
+				if (! totals.member?(category))
+					totals[category] = {};
+				end
+				if (! numericValues.member?(category))
+					numericValues[category] = {}
+				end
                 classes[category] += 1
                 # now process each attribute of the instance
                 col = 0
@@ -61,6 +70,19 @@ class Classifier
 						counts[category][col][columnValue] = 0
 					end
                     counts[category][col][columnValue] += 1
+				}
+				# Process numeric attributes
+				col = 0
+				nums.each{ |columnValue|
+					col += 1
+					if (! totals[category].member?(col))
+						totals[category][col] = 0;
+					end
+					totals[category][col] += columnValue
+					if (! numericValues[category].member?(col))
+						numericValues[category][col] = []
+					end
+					numericValues[category][col].push(columnValue)
 				}
 			}
 			end
@@ -97,6 +119,34 @@ class Classifier
 			}
 		}
         @tmp =  counts               
+
+		# Now compute mean and sample standard deviation
+		@means = {}
+		@ssd = {}
+		@totals =totals
+		totals.each{ |category, columns|
+			if (! @means.member?(category))
+				@means[category] = {}
+			end
+			columns.each { |col, cTotal|
+				@means[category][col] = cTotal / classes[category]
+			}
+		}
+
+		numericValues.each{ |category, columns|
+			if (! @ssd.member?(category))
+				@ssd[category] = {}
+			end
+			columns.each{ |col, values|
+				sumOfSquareDifferences = 0
+				theMean = @means[category][col]
+				values.each { |value|
+					sumOfSquareDifferences += (value - theMean)**2
+				}
+				columns[col] = 0
+				@ssd[category][col] = Math.sqrt(sumOfSquareDifferences / (classes[category] - 1))
+			}
+		}
         
 	end
 
@@ -138,8 +188,9 @@ class Classifier
 	end
 
     
-    def classify(itemVector)
+    def classify(itemVector, numVector)
         results = []
+		sqrt2pi = Math.sqrt(2 * Math::PI)
 		@prior.each { |category, prior|
             prob = prior
             col = 1
@@ -152,6 +203,15 @@ class Classifier
                     prob = prob * @conditional[category][col][attrValue]
 				end
                 col += 1
+			}
+			col = 1
+			numVector.each{ |x|
+				if (! @means[category].member?(col)) then next end
+				mean = @means[category][col]
+				ssd = @ssd[category][col]
+				ePart = Math.exp(-1 * (x - mean)**2/(2*ssd**2))
+				prob = prob * ((1.0 / (sqrt2pi*ssd)) * ePart)
+				col += 1
 			}
             results.push([prob, category])
 		}
