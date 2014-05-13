@@ -7,7 +7,9 @@
 # _____________________________________________________________________
 
 class Classifier
-	# A port to Ruby. Changed to just have bucket as input.
+	# Port of "Data Mining for Programmers" code into Ruby.
+	# Builds a classifier using all buckets that don't include the specified 
+	# number.
 	def initialize(files, number, dataFormat)
         total = 0
         classes = {}
@@ -15,26 +17,26 @@ class Classifier
         
         # reading the data in from the file
         
-        @format = dataFormat.strip.split('\t')
+        @format = dataFormat.strip.split(/\s/)# CHANGE to ' ' from '\t'
         @prior = {}
         @conditional = {}
         # for each of the buckets numbered 1 through 10:
-        (1...11).each do |i|
+        (1...11).each { |i|
 			if (i != number)
 			category = 0
 			bucket = files + "-" + i.to_s.rjust(2, "0")
             lines = IO.readlines(bucket)
             lines.each { |line|
-                fields = line.strip.split('\t')
+                fields = line.strip.split(/\s/) 
                 ignore = []
                 vector = []
 				Range.new(1, fields.length).each { |i|
                     if @format[i] == 'num'
-                        vector.append(float(fields[i]))
+                        vector.push(float(fields[i]))
                     elsif @format[i] == 'attr'
-                        vector.append(fields[i])                           
+                        vector.push(fields[i])                           
                     elsif @format[i] == 'comment'
-                        ignore.append(fields[i])
+                        ignore.push(fields[i])
                     elsif @format[i] == 'class'
                         category = fields[i]
 					end
@@ -52,13 +54,17 @@ class Classifier
                 col = 0
                 vector.each { |columnValue|
                     col += 1
-                    counts[category].setdefault(col, {})
-                    counts[category][col].setdefault(columnValue, 0)
+					if (! counts[category].member?(col))
+						counts[category][col] = {}
+					end
+					if (! counts[category][col].member?(columnValue))
+						counts[category][col][columnValue] = 0
+					end
                     counts[category][col][columnValue] += 1
 				}
 			}
 			end
-		end
+		}
         
         #
         # ok done counting. now compute probabilities
@@ -75,12 +81,17 @@ class Classifier
 				if (! @conditional.member?(category))
 					@conditional[category] = {}
 				end
+				puts(columns)
 	
 			  columns.each{ |col, valueCounts|
-			  	if (! @conditional.member?(category))
-					@conditional[category] = {}
+			  	printf("%s %s\n", col, valueCounts)
+			  	if (! @conditional[category].member?(col))
+					@conditional[category][col] = {}
 				end
 				  valueCounts.each { |attrValue, count|
+				  	printf("vce %s %s\n", attrValue, count)
+					puts(@conditional[category])
+					puts(@conditional[category][col])
                       @conditional[category][col][attrValue] = (count / classes[category])
 				}
 			}
@@ -211,8 +222,8 @@ end
 #                       "attr\tattr\tattr\tattr\tclass")
 #print(c.classify(['health', 'moderate', 'moderate', 'yes']))
 
-c = Classifier.new("house-votes/hv", 5, "class\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr")
-t = c.testBucket("house-votes/hv", 5)
-print(t)
+#c = Classifier.new("house-votes/hv", 5, "class\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr\tattr")
+#t = c.testBucket("house-votes/hv", 5)
+#print(t)
 #c = Classifier.new("pimaSmall/pimaSmall", 1, "num\tnum num num num num num num class")
 
